@@ -1,0 +1,133 @@
+// This is your Prisma schema file.
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --------------------
+// Models
+// --------------------
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  wallets       Wallet[]
+  transactions  Transaction[]
+  categories    Category[]
+  budgets       Budget[]
+  subscriptions Subscription[]
+}
+
+model Wallet {
+  id                  String        @id @default(uuid())
+  user                User          @relation(fields: [userId], references: [id])
+  userId              String
+  provider            Provider
+  externalId          String
+  name                String
+  balance             Decimal       @default(0)
+  currency            String        @default("XAF")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  transactions        Transaction[]
+
+  @@unique([userId, provider, externalId])
+}
+
+enum Provider {
+  MTN_MONEY
+  ORANGE_MONEY
+  PAYSIKA
+  NEERO
+  OTHER
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+model Category {
+  id          String        @id @default(uuid())
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  emoji       String?
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@unique([userId, name])
+}
+
+model Transaction {
+  id                   String          @id @default(uuid())
+  user                 User            @relation(fields: [userId], references: [id])
+  userId               String
+  wallet               Wallet          @relation(fields: [walletId], references: [id])
+  walletId             String
+  amount               Decimal
+  currency             String          @default("XAF")
+  type                 TransactionType
+  category             Category?       @relation(fields: [categoryId], references: [id])
+  categoryId           String?
+  description          String?
+  providerTransactionId String?
+  importedAt           DateTime?
+  occurredAt           DateTime        @default(now())
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@index([userId, occurredAt])
+  @@index([walletId])
+}
+
+model Budget {
+  id          String     @id @default(uuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  year        Int
+  month       Int
+  amount      Decimal
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([userId, year, month, categoryId])
+}
+
+model Subscription {
+  id          String     @id @default(uuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  amount      Decimal
+  currency    String     @default("XAF")
+  cycle       BillingCycle
+  nextDue     DateTime
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+  WEEKLY
+}
