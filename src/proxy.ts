@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const COOKIE_NAME = "afriflow_token";
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
-const PUBLIC_API_PREFIXES = ["/api/auth"];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow static assets and Next.js internals
