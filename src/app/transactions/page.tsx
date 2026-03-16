@@ -60,6 +60,19 @@ export default function TransactionsPage() {
   const [type, setType] = useState<"DEBIT" | "CREDIT">("DEBIT");
   const [provider, setProvider] = useState<string>("MTN_MONEY");
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setTransactions((current) => current.filter((t) => t.id !== id));
+      }
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const total = useMemo(
     () => transactions.reduce((sum, txn) => sum + (txn.type === "DEBIT" ? -Number(txn.amount) : Number(txn.amount)), 0),
@@ -381,6 +394,26 @@ export default function TransactionsPage() {
                         </span>
                         <p className="text-xs text-slate-400 mt-0.5">XAF</p>
                       </div>
+
+                      {/* Delete button */}
+                      <button
+                        onClick={() => handleDelete(tx.id)}
+                        disabled={deleting === tx.id}
+                        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-red-50"
+                        style={{ color: deleting === tx.id ? "#fca5a5" : "#ef4444", opacity: deleting === tx.id ? 0.5 : 1 }}
+                        title="Supprimer"
+                      >
+                        {deleting === tx.id ? (
+                          <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   );
                 })}
